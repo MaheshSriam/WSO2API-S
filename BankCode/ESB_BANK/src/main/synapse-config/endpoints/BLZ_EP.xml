@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<endpoint name="BLZ_EP" xmlns="http://ws.apache.org/ns/synapse">
+    <address format="soap11" uri="http://www.thomas-bayer.com/axis2/services/BLZService"/>
+</endpoint>

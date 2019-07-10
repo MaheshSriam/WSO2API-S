@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/getBank" name="Blzcode" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="POST" protocol="http">
+        <inSequence>
+            <log level="custom" separator=",">
+                <property expression="$body" name="Bankcode"/>
+            </log>
+            <property expression="json-eval($.getBank.Code)" name="code" scope="default" type="STRING"/>
+            <log level="custom" separator=",">
+                <property expression="fn:concat('the number is -',get-property('code'))" name="in_value"/>
+            </log>
+            <payloadFactory media-type="xml">
+                <format>
+                    <blz:getBank xmlns:blz="http://thomas-bayer.com/blz/">
+                        <blz:blz>$1</blz:blz>
+                    </blz:getBank>
+                </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('code')"/>
+                </args>
+            </payloadFactory>
+            <property name="SOAPAction" scope="transport" type="STRING" value="http://thomas-bayer.com/blz/getBank"/>
+            <property name="ContentType" scope="axis2" type="STRING" value="text/xml"/>
+            <log>
+                <property expression="$body" name=":: before Endpoint ::"/>
+            </log>
+            <property name="FORCE_ERROR_ON_SOAP_FAULT" scope="default" type="STRING" value="true"/>
+            <call>
+                <endpoint key="BLZ_EP"/>
+            </call>
+            <log>
+                <property expression="$body" name=":: After Endpoint::"/>
+            </log>
+            <property name="ContentType" scope="axis2" type="STRING" value="application/json"/>
+            <property name="messageType" scope="axis2" type="STRING" value="application/json"/>
+            <log>
+                <property expression="$body" name=":: before payload::"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+                	{  
+				   "getBankResponse":{  
+				      "details":{  
+				         "designation":"$1",
+				         "bic":"$2",
+				         "place":"$3",
+				         "postalCode":"$4"
+				      }
+				   }
+				}
+                </format>
+                <args>
+                    <arg evaluator="xml" expression="//ns1:details/ns1:bezeichnung/text()" xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                    <arg evaluator="xml" expression="//ns1:details/ns1:bic/text()" xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                    <arg evaluator="xml" expression="//ns1:details/ns1:ort/text()" xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                    <arg evaluator="xml" expression="//ns1:details/ns1:plz/text()" xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                </args>
+            </payloadFactory>
+            <log>
+                <property expression="$body" name=":: After Payload::"/>
+            </log>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence>
+            <log>
+                <property expression="$body" name=":: before payload::"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+		                {
+		                	"getBankResponse":
+		         			{
+								"http-status":"$1",
+								"faultString":"$2"
+							}
+						}
+						</format>
+                <args>
+                    <arg evaluator="xml" expression="$axis2:HTTP_SC" xmlns:ns="http://org.apache.synapse/xsd"/>
+                    <arg evaluator="xml" expression="//soapenv:Body/soapenv:Fault/faultstring/text()" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"/>
+                </args>
+            </payloadFactory>
+            <log>
+                <property expression="$body" name=":: After payload::"/>
+            </log>
+            <respond/>
+        </faultSequence>
+    </resource>
+</api>
